@@ -2,15 +2,14 @@ library(ggplot2)
 library(gridExtra)
 library(reshape)
 
-# Non-linear fitting for u1
 setwd("~/Desktop/JiayiQu/UCD_PhD/LDproj")
 
-# Ne_table.csv is a file saving Er2 for different combinations of parameters (shown in Data folder)
+# Ne_table.csv is a file saving Er2 for different combinations of parameters (shown in data folder)
 df_Ne = read.csv("Ne_table.csv")
 head(df_Ne)
 
-df_Ne_u0 = df_Ne[df_Ne[, "u"] == 0, ]
-df_Ne_u1 = df_Ne[df_Ne[, "u"] == 1e-9, ]
+df_Ne_u0 = df_Ne[df_Ne[, "u"] == 0, ] # mutation = 0
+df_Ne_u1 = df_Ne[df_Ne[, "u"] == 1e-9, ] # mutation = 1e-9
 
 myfun = function(a, b, c, Ne){
   res = 1/(a+b*c*Ne)
