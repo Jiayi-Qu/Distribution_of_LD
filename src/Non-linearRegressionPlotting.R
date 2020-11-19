@@ -4,8 +4,11 @@ library(reshape)
 
 # Non-linear fitting for u1
 setwd("~/Desktop/JiayiQu/UCD_PhD/LDproj")
+
+# Ne_table.csv is a file saving Er2 for different combinations of parameters (shown in Data folder)
 df_Ne = read.csv("Ne_table.csv")
 head(df_Ne)
+
 df_Ne_u0 = df_Ne[df_Ne[, "u"] == 0, ]
 df_Ne_u1 = df_Ne[df_Ne[, "u"] == 1e-9, ]
 
@@ -18,6 +21,7 @@ Hillfunc = function(c, N, u){
   theta = 4*N*u
   (10 + rho + 4*theta)/(22 + 13*rho + 32*theta + rho^2 + 6*rho*theta + 8*theta^2)
 }
+
 recomb = c(0.5, 0.4, 0.3, 0.2, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01, 6.25e-5)
 
 df_u1 = data.frame(matrix(ncol = 6, nrow = 0))
@@ -140,151 +144,4 @@ for (i in recomb_u0){
 }
 
 #grid.arrange(grobs=plotlist_u0,ncol=2)
-
-### Non Linear Regression with MAF
-# Non-linear fitting for u1
-setwd("~/Desktop/JiayiQu/UCD_PhD/LDproj")
-df_Ne = read.table("NonLinear_MAF1.csv", sep = ",", header = TRUE)
-head(df_Ne)
-df_Ne_u0 = df_Ne[df_Ne[, "u"] == 0, ]
-df_Ne_u1 = df_Ne[df_Ne[, "u"] == 1e-9, ]
-
-myfun = function(a, b, c, Ne){
-  res = 1/(a+b*c*Ne)
-}
-
-Hillfunc = function(c, N, u){
-  rho = 4*N*c
-  theta = 4*N*u
-  (10 + rho + 4*theta)/(22 + 13*rho + 32*theta + rho^2 + 6*rho*theta + 8*theta^2)
-}
-recomb = c(0.5, 0.4, 0.3, 0.2, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01, 6.25e-5)
-
-df = data.frame(matrix(ncol = 6, nrow = 0))
-colnames(df) = c("c", "a", "b", "mse_trans", "mse_sved", "mse_hill")
-j = 1
-for(i in recomb){
-  dat = df_Ne_u1[df_Ne_u1[, "r"] == i, ]
-  fit <- nls(Er2_MAF ~ 1/(a + b*Ne*r), data = dat,
-             start = list(a = 0.5, b = 3))
-  a_coef = coef(fit)[1]
-  b_coef = coef(fit)[2]
-  df[j, c(1:3)] = c(i, a_coef, b_coef)
-  df[j, "mse_trans"] = mean((dat$Er2_MAF -  1/(a_coef + b_coef*dat$Ne*dat$r))^2)
-  df[j, "mse_sved"] = mean((dat$Er2_MAF -  1/(1 + 4*dat$Ne*dat$r))^2)
-  df[j, "mse_hill"] = mean((dat$Er2_MAF - Hillfunc(c = dat$r, N = dat$Ne, u = 1e-9))^2)
-  
-  j = j + 1
-}
-
-j = 1
-plotlist = list()
-for (i in recomb){
-  dat = df_Ne_u1[df_Ne_u1[, "r"] == i, ]
-  p = ggplot(data = dat, aes(x = Ne, y = Er2_MAF)) + geom_point() +
-    stat_function(fun = myfun, args = list(a = df$a[j], b = df$b[j], c = i), aes(colour = "Trans")) +
-    # Sved
-    stat_function(fun = myfun, args = list(a = 1, b = 4, c = i), aes(colour = "Sved" )) +
-    # Hill
-    stat_function(fun = Hillfunc, args = list(u = 1e-9, c = i), aes(colour ="Hill" )) +  
-    xlab("Ne") + ylab(expression("r"[E]^2)) + 
-    scale_x_continuous(expand = c(0, 5), limits = c(5, 52)) + scale_y_continuous(expand = c(0, 0), limits = c(0, 1)) + 
-    scale_color_manual("", breaks = c("Trans", "Sved", "Hill"), values = c("#E69F00", "red", "#56B4E9"))  + 
-    ggtitle(i) + theme_classic() + theme(plot.title = element_text(hjust = 0.5)) +
-    theme(legend.justification=c(0.9,0.9), legend.position=c(.9,.9), legend.text=element_text(size=10), legend.title=element_blank()) 
-  plotlist[[j]] = p
-  #pname <- paste0("compPlot_u1_r=",i, "_calibrate")
-  #ggsave(paste0(pname,".png"),p, width = 6, height = 6)
-  j = j+1
-}
-
-grid.arrange(grobs=plotlist,ncol=4)
-
-df
-
-1/(2.7296464+(-46.762252)*100*6.25e-05)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-df_Ne_u1$u = factor(df_Ne_u1$u )
-str(df_Ne_u1)
-ggplot(data = df_Ne_u1, aes(x = Ne, y = E_rsqr)) + geom_line() + facet_wrap(~ r)
-
-for(i in recomb){
-  dat = df_Ne_u1[df_Ne_u1[, "r"] == i, ]
-  p2 = ggplot(dat, aes(x = dat$Ne, y = dat$E_rsqr)) + geom_line() + ggtitle(paste("c = ", i)) + 
-    xlab("Ne") + ylab(expression(paste("E(", "r"^2, ")")))
-  plotlist[[j]] = p
-  #pname <- paste0("NeVsEr2_r=",i)
-  #ggsave(paste0(pname,".png"),p, width = 6, height = 6)
-  j = j+1
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Table 1 cross validation 
-file = "Data_5kb.csv"
-dat = read.csv(file, header = TRUE, sep = ",")[, 1:4]
-
-
-training_data = dat[dat$Ne <= 40,] 
-validation_data = dat[dat$Ne >40,]
-NonLinearFit = function(formula, start_values, dat = training_data, valid_data = validation_data){
-  fit = nls(formula, data = dat, start = start_values)
-  predictions = predict(fit, valid_data)
-  mse = mean((valid_data$E_rsqr - predictions)^2)
-  mse
-}
-
-
-expr1 = "E_rsqr ~ 1/(a + b*Ne*r)"
-start_value1 = list(a = 1, b = 4)
-c1 = 6.25e-5
-
-mse = NonLinearFit(formula = expr1, start_values = start_value1, dat = training_data, valid_data = validation_data)
-mse_sved = mean((validation_data$E_rsqr -  1/(1 + 4*validation_data$Ne*c1))^2)
-mse_hill = mean((validation_data$E_rsqr -  Hillfunc(c = dat$r, N = dat$Ne, 1e-9))^2)
-
-## Table 2 - no validation data
-mean((dat$E_rsqr -  1/(a_coef + b_coef*dat$Ne*dat$r))^2)
-mean((dat$E_rsqr -  1/(1 + 4*dat$Ne*dat$r))^2)
-mean((dat$E_rsqr - Hillfunc(c = dat$r, N = dat$Ne, u = 1e-9))^2)
-
-
-## Validation from real data 
-# Ne = 100 r = 6.25e-5
-1/(a_coef + b_coef*100*6.25e-5) # 0.08
-1/(1 + 4*100*6.25e-5) # 0.98 - Sved
-Hillfunc(c = 6.25e-5, N = 100, u = 1e-9) # 0.449 - Hill
 
